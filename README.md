@@ -92,6 +92,7 @@ If you would like to test on a secure connection, GitHub Codespaces is supported
 
 > [!IMPORTANT]
 > **LICENSE & TRADEMARK POLICY**
+>
 > This project is governed by a [Trademark Policy](TRADEMARKS.md).
 >
 > * **Code:** You are free to fork and modify the code under the MIT License.

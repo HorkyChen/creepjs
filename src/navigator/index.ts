@@ -568,7 +568,9 @@ export function navigatorHTML(fp) {
 				})(webgpu),
 				hashMini(webgpu),
 			)
-		}</div>
+		}
+			<div> adapter:(${!webgpu ? HTMLNote.UNSUPPORTED : webgpu.adapterInfo.join(' ')})</div>
+		</div>
 		<div>userAgentData:</div>
 		<div class="block-text help" title="Navigator.userAgentData\nNavigatorUAData.getHighEntropyValues()">
 			<div>

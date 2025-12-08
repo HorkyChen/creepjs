@@ -19,14 +19,14 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/abrahamjuliot/CreepJS.git"
+    "url": "git+https://github.com/HorkyChen/CreepJS.git"
   },
   "author": "",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/abrahamjuliot/CreepJS/issues"
+    "url": "https://github.com/HorkyChen/CreepJS/issues"
   },
-  "homepage": "https://github.com/abrahamjuliot/CreepJS#readme",
+  "homepage": "https://github.com/HorkyChen/CreepJS#readme",
   "devDependencies": {
     "@rollup/plugin-typescript": "^12.1.2",
     "@typescript-eslint/eslint-plugin": "^8.19.1",

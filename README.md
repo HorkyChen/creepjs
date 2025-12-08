@@ -6,10 +6,10 @@
 > **The ONLY official live deployment is on GitHub Pages.**
 > Any `.org`, `.com`, or custom domain claiming to be CreepJS is an **unauthorized mirror** and should be treated as a malicious honeypot designed to steal your fingerprint data.
 >
-> * ✅ **Official:** `https://abrahamjuliot.github.io/creepjs`
+> * ✅ **Official:** `https://horkychen.github.io/creepjs`
 > * ❌ **Unsafe:** All other URLs.
 
-[https://abrahamjuliot.github.io/creepjs](https://abrahamjuliot.github.io/creepjs)
+[https://horkychen.github.io/creepjs](https://horkychen.github.io/creepjs)
 
 The purpose of this project is to shed light on weaknesses and privacy leaks among modern anti-fingerprinting extensions and browsers.
 

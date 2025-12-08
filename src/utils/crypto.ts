@@ -306,7 +306,7 @@ const getFuzzyHash = async (fp) => {
 	const binSize = Math.ceil(metricKeys.length/maxBins)
 
 	// update log
-	const devMode = window.location.host != 'abrahamjuliot.github.io'
+	const devMode = window.location.host != 'horkychen.github.io'
 	if (devMode && (''+metricKeysReported != ''+metricKeys)) {
 		const newKeys = metricKeysReported.filter((key) => !metricKeys.includes(key))
 		const oldKeys = metricKeys.filter((key) => !metricKeysReported.includes(key))

@@ -7,7 +7,7 @@ The **only** authorized environments for this software are the official source r
 | Platform | URL | Status |
 | :--- | :--- | :--- |
 | **Source Code** | `https://github.com/abrahamjuliot/creepjs` | ✅ **Official** |
-| **Live Demo** | `https://abrahamjuliot.github.io/creepjs` | ✅ **Official** |
+| **Live Demo** | `https://horkychen.github.io/creepjs` | ✅ **Official** |
 | **Localhost** | `localhost` / `127.0.0.1` | ✅ **Safe** |
 
 ---

@@ -618,7 +618,7 @@ export function canvasHTML(fp) {
 	}).join('')).join(' ')
 
 	const emojiHelpTitle = `CanvasRenderingContext2D.measureText()\nhash: ${hashMini(emojiSet)}\n${emojiSet.map((x, i) => i && (i % 6 == 0) ? `${x}\n` : x).join('')}`
-
+	console.log('canvas 2d, lied:', lied)
 	return `
 	<div class="relative col-six${lied ? ' rejected' : ''}">
 		<style>

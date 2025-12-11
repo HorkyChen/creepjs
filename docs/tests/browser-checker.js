@@ -493,7 +493,6 @@
       <div class="small" style="margin-top: 10px;">
         <div>This checker uses feature detection to identify the actual Chrome version.</div>
         <div style="margin-top: 5px;">It checks for APIs and CSS features introduced in Chrome 120-134.</div>
-        <div style="margin-top: 5px;">Based on <a href="https://browserscan.net" target="_blank">browserscan.net</a> detection logic.</div>
         <div style="margin-top: 5px;">Data sources: Chrome Platform Status & Chrome Developer Blog</div>
         <div style="margin-top: 5px;">Last updated: 2025-12-11</div>
       </div>

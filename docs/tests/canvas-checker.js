@@ -288,8 +288,8 @@
           <div class="small" style="margin-top: 5px;">
             <div>匹配率: <strong>${result.matchRate}%</strong> (${result.matchedPixels}/${result.totalPixels} 像素)</div>
             <div>预期颜色: ${result.expectedColor}</div>
-            <div>像素数据哈希: <span class="hash-like">${result.hash}</span></div>
-            <div>toDataURL 哈希: <span class="hash-like" style="word-break: break-all;">${result.dataURLHash}</span></div>
+            <div>像素数据哈希: <span class="hash-like"><strong>${result.hash}</strong></span></div>
+            <div>toDataURL 哈希: <span class="hash-like" style="word-break: break-all;"><strong>${result.dataURLHash}</strong></span></div>
           </div>
           ${detailsHTML}
         </div>
@@ -321,6 +321,9 @@
   // 使用模板创建其他内容
   const otherContent = html`
     <div>
+      <div style="margin-bottom: 20px;">
+        <a href="canvas-all-checker.html" style="font-weight: bold; padding: 10px; background: #eee; border-radius: 4px; text-decoration: none; color: #333;">👉 All Canvas API checking</a>
+      </div>
       <strong>Canvas 篡改检测器</strong>
       <div>检测时间: <span class="time">${perf.toFixed(2)} ms</span></div>
       <div class="relative">

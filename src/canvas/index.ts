@@ -213,11 +213,12 @@ const paintCanvas = ({
     const { width, height } = area
     context.beginPath()
     context.arc(
-      patchSeed(getNextSeed(), offset, width),
-      patchSeed(getNextSeed(), offset, height),
-      patchSeed(getNextSeed(), offset, Math.min(width, height)),
+      patchSeed(getNextSeed(), offset, width, false),
+      patchSeed(getNextSeed(), offset, height, false),
+      patchSeed(getNextSeed(), offset, Math.min(width, height), false),
       patchSeed(getNextSeed(), offset, 2 * Math.PI, true),
       patchSeed(getNextSeed(), offset, 2 * Math.PI, true),
+      true,
     )
     context.stroke()
   }
@@ -263,10 +264,10 @@ const paintCanvas = ({
     const { width, height } = area
     context.beginPath()
     context.ellipse(
-      patchSeed(getNextSeed(), offset, width),
-      patchSeed(getNextSeed(), offset, height),
-      patchSeed(getNextSeed(), offset, Math.floor(width / 2)),
-      patchSeed(getNextSeed(), offset, Math.floor(height / 2)),
+      patchSeed(getNextSeed(), offset, width, false),
+      patchSeed(getNextSeed(), offset, height, false),
+      patchSeed(getNextSeed(), offset, Math.floor(width / 2), false),
+      patchSeed(getNextSeed(), offset, Math.floor(height / 2), false),
       patchSeed(getNextSeed(), offset, 2 * Math.PI, true),
       patchSeed(getNextSeed(), offset, 2 * Math.PI, true),
       patchSeed(getNextSeed(), offset, 2 * Math.PI, true),

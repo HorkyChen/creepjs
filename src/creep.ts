@@ -573,7 +573,7 @@ import getBestWorkerScope, { Scope, spawnWorker, workerScopeHTML } from './worke
 	const [fpHash, creepHash] = await Promise.all([hashify(fp), hashify(creep)]).catch((error) => {
 		console.error(error.message)
 	}) || []
-	
+
 	const blankFingerprint = '0000000000000000000000000000000000000000000000000000000000000000'
 	const el = document.getElementById('fingerprint-data')
 	patch(el, html`
@@ -672,6 +672,7 @@ import getBestWorkerScope, { Scope, spawnWorker, workerScopeHTML } from './worke
 			<div>
 				<a class="tests" href="./tests/workers.html">Workers</a>
 				<br><a class="tests" href="./tests/iframes.html">Iframes</a>
+				<br><a class="tests" href="./tests/canvas-checker.html">Canvas Checker</a>
 				<br><a class="tests" href="./tests/fonts.html">Fonts</a>
 				<br><a class="tests" href="./tests/timezone.html">Timezone</a>
 				<br><a class="tests" href="./tests/window.html">Window Version</a>

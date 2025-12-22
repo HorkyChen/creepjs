@@ -8,6 +8,20 @@
     return ('0000000' + (hash >>> 0).toString(16)).substr(-8)
   }
 
+  /**
+   * 计算 SHA-256 哈希值
+   * @param {string} str - 要哈希的字符串
+   * @returns {Promise<string>} 哈希值的十六进制字符串
+   */
+  async function hashSHA256(str) {
+    const encoder = new TextEncoder()
+    const data = encoder.encode(str)
+    const hashBuffer = await crypto.subtle.digest('SHA-256', data)
+    const hashArray = Array.from(new Uint8Array(hashBuffer))
+    const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('')
+    return hashHex
+  }
+
   // template views
   const patch = (oldEl, newEl) => oldEl.parentNode.replaceChild(newEl, oldEl)
   const html = (str, ...expressionSet) => {
@@ -78,11 +92,15 @@
    * 验证 canvas 颜色是否被篡改
    * @param {HTMLCanvasElement} canvas - Canvas 元素
    * @param {string} colorKey - 预期颜色键名
-   * @returns {Object} 包含验证结果和详细信息
+   * @returns {Promise<Object>} 包含验证结果和详细信息
    */
-  function verifyCanvasColor(canvas, colorKey) {
+  async function verifyCanvasColor(canvas, colorKey) {
     const ctx = canvas.getContext('2d')
     const color = colors[colorKey]
+
+    // 计算 toDataURL 的哈希值
+    const dataURL = canvas.toDataURL()
+    const dataURLHash = await hashSHA256(dataURL)
 
     // 读取所有像素数据
     const imageData = ctx.getImageData(0, 0, 100, 100)
@@ -132,7 +150,8 @@
         matchRate,
         differentPixels,
         expectedColor: '渐进色 (0-255)',
-        hash: hashMini(Array.from(pixels))
+        hash: hashMini(Array.from(pixels)),
+        dataURLHash: dataURLHash
       }
     }
 
@@ -175,19 +194,20 @@
       matchRate,
       differentPixels,
       expectedColor: `rgba(${expectedColor.join(', ')})`,
-      hash: hashMini(Array.from(pixels))
+      hash: hashMini(Array.from(pixels)),
+      dataURLHash: dataURLHash
     }
   }
 
   /**
    * 检查所有颜色
    */
-  function checkAllColors() {
+  async function checkAllColors() {
     const results = {}
 
     for (const colorKey in colors) {
       const canvas = createSolidCanvas(colorKey)
-      const result = verifyCanvasColor(canvas, colorKey)
+      const result = await verifyCanvasColor(canvas, colorKey)
       results[colorKey] = {
         ...result,
         colorName: colors[colorKey].name,
@@ -201,7 +221,7 @@
   // 主检测逻辑
   console.log('=== Canvas Checker: Starting tampering detection ===')
   const start = performance.now()
-  const results = checkAllColors()
+  const results = await checkAllColors()
   const perf = performance.now() - start
 
   // 统计总体结果
@@ -215,7 +235,8 @@
     console.log(`  Status: ${result.isTampered ? '✗ 篡改' : '✓ 正常'}`)
     console.log(`  Match Rate: ${result.matchRate}%`)
     console.log(`  Matched Pixels: ${result.matchedPixels}/${result.totalPixels}`)
-    console.log(`  Hash: ${result.hash}`)
+    console.log(`  Pixel Data Hash: ${result.hash}`)
+    console.log(`  toDataURL Hash: ${result.dataURLHash}`)
 
     if (result.isTampered) {
       tamperedTests++
@@ -267,7 +288,8 @@
           <div class="small" style="margin-top: 5px;">
             <div>匹配率: <strong>${result.matchRate}%</strong> (${result.matchedPixels}/${result.totalPixels} 像素)</div>
             <div>预期颜色: ${result.expectedColor}</div>
-            <div>数据哈希: <span class="hash-like">${result.hash}</span></div>
+            <div>像素数据哈希: <span class="hash-like">${result.hash}</span></div>
+            <div>toDataURL 哈希: <span class="hash-like" style="word-break: break-all;">${result.dataURLHash}</span></div>
           </div>
           ${detailsHTML}
         </div>

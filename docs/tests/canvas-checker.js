@@ -125,7 +125,8 @@
       const result = verifyCanvasColor(canvas, colorKey)
       results[colorKey] = {
         ...result,
-        colorName: colors[colorKey].name
+        colorName: colors[colorKey].name,
+        canvas: canvas  // 保存 canvas 元素用于显示
       }
     }
 
@@ -164,8 +165,8 @@
 
   console.log(`\n=== Detection complete: ${passedTests}/${totalTests} passed ===\n`)
 
-  // 生成检测结果 HTML
-  let resultsHTML = ''
+  // 生成检测结果 HTML (先创建容器,稍后插入 canvas)
+  const resultContainers = []
   for (const colorKey in results) {
     const result = results[colorKey]
     const statusClass = result.isTampered ? 'lies' : 'high-entropy'
@@ -187,21 +188,33 @@
       `
     }
 
-    resultsHTML += `
-      <div style="margin: 10px 0; padding: 10px; border-left: 3px solid ${result.isTampered ? '#ca656e' : '#6bcd85'};">
-        <div><strong>${result.colorName}</strong></div>
-        <div style="margin-top: 5px;">
-          <span class="${statusClass}">${statusText}</span>
+    // 创建一个包含 canvas 占位符的容器
+    const container = document.createElement('div')
+    container.style.cssText = `margin: 10px 0; padding: 10px; border-left: 3px solid ${result.isTampered ? '#ca656e' : '#6bcd85'};`
+    container.innerHTML = `
+      <div style="display: flex; align-items: center; gap: 15px;">
+        <div id="canvas-container-${colorKey}" style="flex-shrink: 0;"></div>
+        <div style="flex: 1;">
+          <div><strong>${result.colorName}</strong></div>
+          <div style="margin-top: 5px;">
+            <span class="${statusClass}">${statusText}</span>
+          </div>
+          <div class="small" style="margin-top: 5px;">
+            <div>匹配率: <strong>${result.matchRate}%</strong> (${result.matchedPixels}/${result.totalPixels} 像素)</div>
+            <div>预期颜色: ${result.expectedColor}</div>
+            <div>数据哈希: <span class="hash-like">${result.hash}</span></div>
+          </div>
+          ${detailsHTML}
         </div>
-        <div class="small" style="margin-top: 5px;">
-          <div>匹配率: <strong>${result.matchRate}%</strong> (${result.matchedPixels}/${result.totalPixels} 像素)</div>
-          <div>预期颜色: ${result.expectedColor}</div>
-          <div>数据哈希: <span class="hash-like">${result.hash}</span></div>
-        </div>
-        ${detailsHTML}
       </div>
     `
+
+    resultContainers.push({ container, colorKey, canvas: result.canvas })
   }
+
+  // 将所有容器合并成一个文档片段
+  const resultsFragment = document.createDocumentFragment()
+  resultContainers.forEach(item => resultsFragment.appendChild(item.container))
 
   // 判断总体状态
   let overallStatus = note.match
@@ -214,8 +227,12 @@
 
   const el = document.getElementById('fingerprint-data')
 
-  patch(el, html`
-  <div id="fingerprint-data">
+  // 创建主容器
+  const mainContainer = document.createElement('div')
+  mainContainer.id = 'fingerprint-data'
+
+  // 使用模板创建其他内容
+  const otherContent = html`
     <div>
       <strong>Canvas 篡改检测器</strong>
       <div>检测时间: <span class="time">${perf.toFixed(2)} ms</span></div>
@@ -240,9 +257,7 @@
 
     <div class="relative">
       <strong>检测结果详情</strong>
-      <div style="margin-top: 10px;">
-        ${resultsHTML}
-      </div>
+      <div id="results-container" style="margin-top: 10px;"></div>
     </div>
 
     <div class="relative">
@@ -266,8 +281,29 @@
         <div style="margin-top: 5px;">• 哈希算法: 32-bit FNV-1a</div>
       </div>
     </div>
-  </div>
-  `)
+  `
+
+  // 将内容添加到主容器
+  mainContainer.appendChild(otherContent)
+
+  // 替换页面元素
+  patch(el, mainContainer)
+
+  // 渲染后,插入 canvas 元素和结果
+  const resultsContainer = document.getElementById('results-container')
+  if (resultsContainer) {
+    resultsContainer.appendChild(resultsFragment)
+  }
+
+  // 将实际的 canvas 元素插入到各自的容器中
+  resultContainers.forEach(item => {
+    const canvasContainer = document.getElementById(`canvas-container-${item.colorKey}`)
+    if (canvasContainer && item.canvas) {
+      // 添加边框样式使 canvas 更明显
+      item.canvas.style.cssText = 'border: 1px solid #ccc; display: block;'
+      canvasContainer.appendChild(item.canvas)
+    }
+  })
 
   console.log('Canvas Checker UI rendered')
 

@@ -30,12 +30,13 @@
     white: { name: '白色', rgb: [255, 255, 255, 255] },
     red: { name: '红色', rgb: [255, 0, 0, 255] },
     blue: { name: '蓝色', rgb: [0, 0, 255, 255] },
-    green: { name: '绿色', rgb: [0, 255, 0, 255] }
+    green: { name: '绿色', rgb: [0, 255, 0, 255] },
+    gradient: { name: '渐进色', type: 'gradient' }  // 特殊类型:渐进色
   }
 
   /**
-   * 创建指定颜色的纯色 canvas
-   * @param {string} colorKey - 颜色键名 (black/white/red/blue/green)
+   * 创建指定颜色的 canvas (纯色或渐进色)
+   * @param {string} colorKey - 颜色键名 (black/white/red/blue/green/gradient)
    * @returns {HTMLCanvasElement}
    */
   function createSolidCanvas(colorKey) {
@@ -46,9 +47,29 @@
     const ctx = canvas.getContext('2d')
     const color = colors[colorKey]
 
-    // 填充纯色
-    ctx.fillStyle = `rgb(${color.rgb[0]}, ${color.rgb[1]}, ${color.rgb[2]})`
-    ctx.fillRect(0, 0, 100, 100)
+    // 如果是渐进色,使用像素级绘制
+    if (color.type === 'gradient') {
+      const imageData = ctx.createImageData(100, 100)
+      const data = imageData.data
+      const totalPixels = 100 * 100
+
+      // 为每个像素设置递增的 RGB 值
+      for (let i = 0; i < totalPixels; i++) {
+        const pixelIndex = i * 4
+        // RGB 值在 0-255 之间线性递增
+        const value = Math.floor(i * 256 / totalPixels)
+        data[pixelIndex] = value      // R
+        data[pixelIndex + 1] = value  // G
+        data[pixelIndex + 2] = value  // B
+        data[pixelIndex + 3] = 255    // A
+      }
+
+      ctx.putImageData(imageData, 0, 0)
+    } else {
+      // 填充纯色
+      ctx.fillStyle = `rgb(${color.rgb[0]}, ${color.rgb[1]}, ${color.rgb[2]})`
+      ctx.fillRect(0, 0, 100, 100)
+    }
 
     return canvas
   }
@@ -61,7 +82,7 @@
    */
   function verifyCanvasColor(canvas, colorKey) {
     const ctx = canvas.getContext('2d')
-    const expectedColor = colors[colorKey].rgb
+    const color = colors[colorKey]
 
     // 读取所有像素数据
     const imageData = ctx.getImageData(0, 0, 100, 100)
@@ -72,7 +93,51 @@
     let matchedPixels = 0
     let differentPixels = []
 
-    // 采样检查 - 检查所有像素
+    // 渐进色的验证逻辑
+    if (color.type === 'gradient') {
+      for (let i = 0; i < totalPixels; i++) {
+        const pixelIndex = i * 4
+        const r = pixels[pixelIndex]
+        const g = pixels[pixelIndex + 1]
+        const b = pixels[pixelIndex + 2]
+        const a = pixels[pixelIndex + 3]
+
+        // 计算期望的 RGB 值
+        const expectedValue = Math.floor(i * 256 / totalPixels)
+
+        // 检查是否与预期值一致
+        if (r === expectedValue && g === expectedValue && b === expectedValue && a === 255) {
+          matchedPixels++
+        } else {
+          // 记录不一致的像素 (只记录前10个)
+          if (differentPixels.length < 10) {
+            const x = i % 100
+            const y = Math.floor(i / 100)
+            differentPixels.push({
+              position: `(${x}, ${y})`,
+              expected: `rgba(${expectedValue}, ${expectedValue}, ${expectedValue}, 255)`,
+              actual: `rgba(${r}, ${g}, ${b}, ${a})`
+            })
+          }
+        }
+      }
+
+      const matchRate = (matchedPixels / totalPixels * 100).toFixed(2)
+      const isTampered = matchedPixels !== totalPixels
+
+      return {
+        isTampered,
+        matchedPixels,
+        totalPixels,
+        matchRate,
+        differentPixels,
+        expectedColor: '渐进色 (0-255)',
+        hash: hashMini(Array.from(pixels))
+      }
+    }
+
+    // 纯色的验证逻辑
+    const expectedColor = color.rgb
     for (let i = 0; i < pixels.length; i += 4) {
       const r = pixels[i]
       const g = pixels[i + 1]
@@ -263,8 +328,9 @@
     <div class="relative">
       <strong>检测原理</strong>
       <div class="small" style="margin-top: 10px;">
-        <div>• 创建 100x100 像素的纯色 canvas</div>
-        <div style="margin-top: 5px;">• 支持黑色、白色、红色、蓝色、绿色五种颜色</div>
+        <div>• 创建 100x100 像素的测试 canvas</div>
+        <div style="margin-top: 5px;">• 支持黑色、白色、红色、蓝色、绿色五种纯色 + 渐进色</div>
+        <div style="margin-top: 5px;">• 渐进色:所有像素的 RGB 值从 0 递增到 255(灰度递增)</div>
         <div style="margin-top: 5px;">• 读取所有像素点的 RGBA 数据并验证</div>
         <div style="margin-top: 5px;">• 如果任何像素颜色不匹配,即判定为被篡改</div>
         <div style="margin-top: 5px;">• 常见篡改方式:Canvas 指纹保护插件、浏览器隐私模式修改</div>

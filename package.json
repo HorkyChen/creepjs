@@ -6,6 +6,8 @@
   "scripts": {
     "preinstall": "npx only-allow pnpm",
     "test": "echo \"Error: no test specified\" && exit 1",
+    "dev": "npm run watch:dev",
+    "serve": "node server.js",
     "start": "node server.js",
     "watch:dev": "npx rollup --config rollup.config.js -w & nodemon -d 3 ./server.js localhost 8000",
     "build:dev": "npx rollup --config rollup.config.js",

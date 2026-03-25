@@ -84,8 +84,10 @@ Tests are focused on:
 Contributions are welcome.
 
 🟫 install `pnpm install`<br>
+🟧 dev `npm run dev`<br>
 🟩 build `pnpm build:dev`<br>
 🟪 watch `pnpm watch:dev`<br>
+🟦 serve `npm run serve` (http://localhost:8000)<br>
 🟦 release to GitHub pages `pnpm build`<br>
 
 If you would like to test on a secure connection, GitHub Codespaces is supported. The goal of this project is to conduct research and provide education, not to create a fingerprinting library.

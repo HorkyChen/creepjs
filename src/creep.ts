@@ -1,4 +1,5 @@
 import getOfflineAudioContext, { audioHTML } from './audio'
+import getBotFeatures, { botFeaturesHTML } from './bot'
 import getCanvas2d, { canvasHTML } from './canvas'
 import getCSS, { cssHTML } from './css'
 import getCSSMedia, { cssMediaHTML } from './cssmedia'
@@ -50,6 +51,7 @@ import getBestWorkerScope, { Scope, spawnWorker, workerScopeHTML } from './worke
 			workerScopeComputed,
 			voicesComputed,
 			offlineAudioContextComputed,
+			botComputed,
 			canvasWebglComputed,
 			canvas2dComputed,
 			windowFeaturesComputed,
@@ -70,6 +72,7 @@ import getBestWorkerScope, { Scope, spawnWorker, workerScopeHTML } from './worke
 			getBestWorkerScope(),
 			getVoices(),
 			getOfflineAudioContext(),
+			getBotFeatures(),
 			getCanvasWebgl(),
 			getCanvas2d(),
 			getWindowFeatures(),
@@ -142,6 +145,7 @@ import getBestWorkerScope, { Scope, spawnWorker, workerScopeHTML } from './worke
 		const [
 			windowHash,
 			headlessHash,
+			botHash,
 			htmlHash,
 			cssMediaHash,
 			cssHash,
@@ -181,6 +185,7 @@ import getBestWorkerScope, { Scope, spawnWorker, workerScopeHTML } from './worke
 		] = await Promise.all([
 			hashify(windowFeaturesComputed),
 			hashify(headlessComputed),
+			hashify(botComputed),
 			hashify((htmlElementVersionComputed || {}).keys),
 			hashify(cssMediaComputed),
 			hashify(cssComputed),
@@ -318,6 +323,7 @@ import getBestWorkerScope, { Scope, spawnWorker, workerScopeHTML } from './worke
 			navigator: !navigatorComputed ? undefined : {...navigatorComputed, $hash: navigatorHash},
 			windowFeatures: !windowFeaturesComputed ? undefined : {...windowFeaturesComputed, $hash: windowHash},
 			headless: !headlessComputed ? undefined : {...headlessComputed, $hash: headlessHash},
+			bot: !botComputed ? undefined : {...botComputed, $hash: botHash},
 			htmlElementVersion: !htmlElementVersionComputed ? undefined : {...htmlElementVersionComputed, $hash: htmlHash},
 			cssMedia: !cssMediaComputed ? undefined : {...cssMediaComputed, $hash: cssMediaHash},
 			css: !cssComputed ? undefined : {...cssComputed, $hash: cssHash},
@@ -618,6 +624,9 @@ import getBestWorkerScope, { Scope, spawnWorker, workerScopeHTML } from './worke
 			${headlessFeaturesHTML(fp)}
 			${resistanceHTML(fp)}
 		</div>
+		<div id="bot-detection-results" class="flex-grid">
+			${botFeaturesHTML(fp)}
+		</div>
 		<div class="flex-grid relative">${workerScopeHTML(fp)}</div>
 		<div class="flex-grid relative">
 			${webglHTML(fp)}
@@ -673,6 +682,7 @@ import getBestWorkerScope, { Scope, spawnWorker, workerScopeHTML } from './worke
 				<a class="tests" href="./tests/workers.html">Workers</a>
 				<br><a class="tests" href="./tests/iframes.html">Iframes</a>
 				<br><a class="tests" href="./tests/canvas-checker.html">Canvas Checker</a>
+				<br><a class="tests" href="./tests/bot-detection.html">Bot Detection</a>
 				<br><a class="tests" href="./tests/fonts.html">Fonts</a>
 				<br><a class="tests" href="./tests/timezone.html">Timezone</a>
 				<br><a class="tests" href="./tests/window.html">Window Version</a>

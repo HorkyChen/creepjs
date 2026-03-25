@@ -293,10 +293,15 @@
       draw: (ctx) => {
         const imageData = ctx.createImageData(50, 30)
         for (let i = 0; i < imageData.data.length; i += 4) {
-          imageData.data[i] = Math.random() * 255
-          imageData.data[i + 1] = Math.random() * 255
-          imageData.data[i + 2] = Math.random() * 255
-          imageData.data[i + 3] = 255
+          // 使用固定规律的数据替代随机数
+          const pixelIndex = i / 4
+          const x = pixelIndex % 50
+          const y = Math.floor(pixelIndex / 50)
+
+          imageData.data[i] = (x * 5) % 256     // R
+          imageData.data[i + 1] = (y * 8) % 256 // G
+          imageData.data[i + 2] = (x + y) * 2   // B
+          imageData.data[i + 3] = 255           // A
         }
         ctx.putImageData(imageData, 25, 10)
       }

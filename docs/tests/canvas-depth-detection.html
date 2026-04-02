@@ -1,0 +1,596 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Canvas 指纹检测 - 逐步分析测试页</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Consolas, monospace;
+      background: #0d1032;
+      color: #e0e0e0;
+      padding: 20px;
+      line-height: 1.6;
+    }
+    h1 { color: #00b4ff; font-size: 24px; margin-bottom: 8px; }
+    h2 { color: #4affbd; font-size: 18px; margin: 24px 0 8px; border-bottom: 1px solid #333; padding-bottom: 4px; }
+    .subtitle { color: #888; font-size: 13px; margin-bottom: 30px; }
+
+    .test-card {
+      background: #1a1f3a;
+      border: 1px solid #2a3060;
+      border-radius: 10px;
+      padding: 18px 20px;
+      margin-bottom: 18px;
+    }
+    .test-card h3 {
+      color: #ccc;
+      font-size: 14px;
+      font-weight: 600;
+      margin-bottom: 10px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .badge {
+      display: inline-block;
+      font-size: 11px;
+      padding: 2px 8px;
+      border-radius: 20px;
+      font-weight: normal;
+    }
+    .badge-api { background: #1a4070; color: #7ab8ff; }
+    .badge-detect { background: #2a1a50; color: #c87aff; }
+    .badge-noise { background: #3a1a10; color: #ff8c7a; }
+    .badge-png { background: #103a20; color: #7affc8; }
+
+    .desc { font-size: 12px; color: #888; margin-bottom: 12px; line-height: 1.5; }
+
+    /* Result display */
+    .result-row {
+      display: flex;
+      align-items: flex-start;
+      padding: 6px 0;
+      border-bottom: 1px solid #1e2440;
+      font-size: 13px;
+      gap: 12px;
+    }
+    .result-row:last-child { border-bottom: none; }
+    .result-label {
+      flex: 0 0 220px;
+      color: #aaa;
+      font-size: 12px;
+    }
+    .result-value {
+      flex: 1;
+      color: #e0e0e0;
+      word-break: break-all;
+      font-family: Consolas, monospace;
+      font-size: 12px;
+    }
+    .result-value.pass { color: #4affbd; }
+    .result-value.warn { color: #ffb84a; }
+    .result-value.fail { color: #ff5d27; }
+    .result-value.info { color: #00b4ff; }
+    .result-value.pending { color: #666; font-style: italic; }
+
+    /* Canvas display */
+    .canvas-container {
+      margin: 12px 0;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      align-items: flex-start;
+    }
+    .canvas-item {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 4px;
+    }
+    .canvas-label {
+      font-size: 11px;
+      color: #888;
+    }
+    canvas {
+      border: 1px solid #3a4070;
+      background: #fff;
+      display: block;
+    }
+
+    /* PNG chunk table */
+    .chunk-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 12px;
+      margin-top: 8px;
+    }
+    .chunk-table th {
+      background: #1e2440;
+      color: #6a8aff;
+      padding: 6px 10px;
+      text-align: left;
+      font-weight: 600;
+    }
+    .chunk-table td {
+      padding: 5px 10px;
+      border-bottom: 1px solid #1e2440;
+      color: #ccc;
+      font-family: Consolas, monospace;
+      font-size: 11px;
+    }
+    .chunk-table tr:hover td { background: #1e2850; }
+
+    /* Pixel diff visualization */
+    #noiseCanvas { image-rendering: pixelated; }
+
+    /* Summary panel */
+    #summary {
+      background: #0a102a;
+      border: 1px solid #2a3060;
+      border-radius: 10px;
+      padding: 20px;
+      margin-top: 30px;
+    }
+    #summary h2 { margin-top: 0; }
+    .summary-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 12px;
+      margin-top: 12px;
+    }
+    .summary-item {
+      background: #1a1f3a;
+      border-radius: 8px;
+      padding: 12px;
+    }
+    .summary-item .s-label { font-size: 11px; color: #888; }
+    .summary-item .s-value { font-size: 16px; font-weight: 600; margin-top: 4px; }
+
+    /* Run button */
+    .run-btn {
+      background: linear-gradient(90deg, #00b4ff, #4affbd);
+      border: none;
+      border-radius: 30px;
+      color: #000;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 600;
+      padding: 10px 30px;
+      margin-bottom: 24px;
+      transition: opacity 0.2s;
+    }
+    .run-btn:hover { opacity: 0.85; }
+    .run-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+    /* Log */
+    .log-panel {
+      background: #080c20;
+      border: 1px solid #1a2040;
+      border-radius: 6px;
+      font-family: Consolas, monospace;
+      font-size: 11px;
+      max-height: 200px;
+      overflow-y: auto;
+      padding: 8px;
+      color: #7a9fff;
+      margin-top: 10px;
+    }
+    .log-panel .log-line { padding: 1px 0; }
+    .log-panel .log-line.ok { color: #4affbd; }
+    .log-panel .log-line.err { color: #ff5d27; }
+    .log-panel .log-line.warn { color: #ffb84a; }
+    .log-panel .log-line.info { color: #00b4ff; }
+
+    /* Pixel grid for noise visualization */
+    .pixel-diff-wrap {
+      display: flex;
+      gap: 16px;
+      align-items: flex-start;
+      flex-wrap: wrap;
+      margin-top: 10px;
+    }
+    .diff-info {
+      font-size: 12px;
+      color: #aaa;
+      margin-top: 6px;
+    }
+  </style>
+</head>
+<body>
+
+<h1>Canvas 指纹检测 — 逐步分析测试页</h1>
+<p class="subtitle">逐项执行 BrowserScan canvas.html 页面中的所有检测逻辑，并在页面上展示每步操作与结果</p>
+
+<button class="run-btn" id="runBtn" onclick="runAllTests()">▶ 开始运行所有检测</button>
+
+<!-- ═══════════════════════════════════════════════════════
+     Section 1: Canvas API 能力检测
+     ══════════════════════════════════════════════════════ -->
+<h2>① Canvas API 能力检测</h2>
+
+<div class="test-card">
+  <h3>1.1 Canvas 2D API <span class="badge badge-api">API 检测</span></h3>
+  <div class="desc">
+    创建 &lt;canvas&gt; 元素并调用 <code>getContext("2d")</code>，检测浏览器是否支持 Canvas 2D 绘图上下文。
+  </div>
+  <div class="result-row">
+    <span class="result-label">canvas.getContext("2d") 可用</span>
+    <span class="result-value pending" id="res-canvas2d">等待检测...</span>
+  </div>
+</div>
+
+<div class="test-card">
+  <h3>1.2 Canvas Text API <span class="badge badge-api">API 检测</span></h3>
+  <div class="desc">
+    在 getContext("2d") 基础上，进一步检测 <code>ctx.fillText</code> 是否为 function 类型，确认文字渲染能力可用。
+  </div>
+  <div class="result-row">
+    <span class="result-label">typeof ctx.fillText === "function"</span>
+    <span class="result-value pending" id="res-textapi">等待检测...</span>
+  </div>
+</div>
+
+<div class="test-card">
+  <h3>1.3 Canvas toDataURL <span class="badge badge-api">API 检测</span></h3>
+  <div class="desc">
+    调用 <code>canvas.toDataURL()</code>，检测返回值是否以 <code>data:image/png;base6</code> 开头，确认 PNG 导出功能正常。
+  </div>
+  <div class="result-row">
+    <span class="result-label">toDataURL() 返回有效 PNG base64</span>
+    <span class="result-value pending" id="res-todataurl">等待检测...</span>
+  </div>
+  <div class="result-row">
+    <span class="result-label">返回值前缀</span>
+    <span class="result-value info" id="res-todataurl-prefix">—</span>
+  </div>
+</div>
+
+<div class="test-card">
+  <h3>1.4 OffscreenCanvas API <span class="badge badge-api">API 检测</span></h3>
+  <div class="desc">
+    尝试创建 <code>new OffscreenCanvas(1, 1)</code> 并检测 <code>convertToBlob</code> 方法是否存在，检测 Worker 线程离屏绘图支持。
+  </div>
+  <div class="result-row">
+    <span class="result-label">OffscreenCanvas 可用</span>
+    <span class="result-value pending" id="res-offscreen">等待检测...</span>
+  </div>
+  <div class="result-row">
+    <span class="result-label">convertToBlob 方法存在</span>
+    <span class="result-value pending" id="res-offscreen-blob">等待检测...</span>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════
+     Section 2: isNative 检测
+     ══════════════════════════════════════════════════════ -->
+<h2>② toDataURL Native 状态检测</h2>
+
+<div class="test-card">
+  <h3>2.1 toDataURL 是否为原生函数 <span class="badge badge-detect">插件检测</span></h3>
+  <div class="desc">
+    将 <code>canvas.toDataURL.toString()</code> 的结果用正则 <code>/native/i</code> 匹配。
+    被 JS 插件（如指纹浏览器）覆盖的函数，其 <code>toString()</code> 不包含 "native code"，从而可被识别。
+  </div>
+  <div class="result-row">
+    <span class="result-label">toDataURL.toString()</span>
+    <span class="result-value info" id="res-native-str" style="font-size:11px;">—</span>
+  </div>
+  <div class="result-row">
+    <span class="result-label">包含 "native" → 原生实现</span>
+    <span class="result-value pending" id="res-native">等待检测...</span>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════
+     Section 3: 标准绘图 + 指纹提取
+     ══════════════════════════════════════════════════════ -->
+<h2>③ 标准测试图绘制与指纹提取</h2>
+
+<div class="test-card">
+  <h3>3.1 标准测试图绘制（drawStandardImage） <span class="badge badge-detect">指纹采集</span></h3>
+  <div class="desc">
+    在 240×60 画布上执行：橙色矩形背景 + Times New Roman 字体蓝色文字 "Cwm fjordbank gly 🐝"（含 Emoji）+ 半透明 Arial 绿色文字叠加。
+    此图像在不同 OS/GPU/浏览器下因字体渲染抗锯齿、字体微调差异产生不同像素分布。
+  </div>
+  <div class="canvas-container">
+    <div class="canvas-item">
+      <span class="canvas-label">标准测试图（240×60）</span>
+      <canvas id="standardCanvas" width="1" height="1"></canvas>
+    </div>
+    <div class="canvas-item">
+      <span class="canvas-label">几何图形（圆形 multiply 混合）</span>
+      <canvas id="geometryCanvas" width="1" height="1"></canvas>
+    </div>
+  </div>
+  <div class="result-row">
+    <span class="result-label">文字内容</span>
+    <span class="result-value info" id="res-text-content">—</span>
+  </div>
+  <div class="result-row">
+    <span class="result-label">绘制参数</span>
+    <span class="result-value info" id="res-draw-params">—</span>
+  </div>
+</div>
+
+<div class="test-card">
+  <h3>3.2 isPointInPath（evenodd 规则）检测 <span class="badge badge-detect">API 行为</span></h3>
+  <div class="desc">
+    构造矩形 + 弧线路径，使用 <code>isPointInPath(5, 5, "evenodd")</code> 判断点是否在路径内。
+    不同浏览器对 evenodd 填充规则的实现存在差异，可用于区分引擎版本。
+  </div>
+  <div class="result-row">
+    <span class="result-label">rect(0,0,10,10) + arc(2,2,6,6)</span>
+    <span class="result-value pending" id="res-winding">等待检测...</span>
+  </div>
+  <div class="result-row">
+    <span class="result-label">isPointInPath(5, 5, "evenodd") 返回</span>
+    <span class="result-value info" id="res-winding-raw">—</span>
+  </div>
+</div>
+
+<div class="test-card">
+  <h3>3.3 Canvas 指纹值提取 <span class="badge badge-detect">指纹采集</span></h3>
+  <div class="desc">
+    对标准测试图调用 <code>toDataURL()</code>，提取 base64 字符串作为图像指纹。
+    同时计算 CRC32 哈希（基于 PNG 二进制数据）以及颜色数量统计。
+  </div>
+  <div class="result-row">
+    <span class="result-label">toDataURL() 长度</span>
+    <span class="result-value info" id="res-fp-len">—</span>
+  </div>
+  <div class="result-row">
+    <span class="result-label">base64 前 80 字符</span>
+    <span class="result-value info" id="res-fp-preview" style="font-size:11px; word-break:break-all;">—</span>
+  </div>
+  <div class="result-row">
+    <span class="result-label">颜色数量（colorCount）</span>
+    <span class="result-value info" id="res-colorcount">—</span>
+  </div>
+  <div class="result-row">
+    <span class="result-label">PNG 文件字节大小</span>
+    <span class="result-value info" id="res-filesize">—</span>
+  </div>
+  <div class="result-row">
+    <span class="result-label">几何图指纹前 80 字符</span>
+    <span class="result-value info" id="res-geo-fp" style="font-size:11px; word-break:break-all;">—</span>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════
+     Section 4: PNG 数据块解析
+     ══════════════════════════════════════════════════════ -->
+<h2>④ PNG 数据块（Chunk）解析</h2>
+
+<div class="test-card">
+  <h3>4.1 PNG 二进制结构解析 <span class="badge badge-png">PNG 分析</span></h3>
+  <div class="desc">
+    将 toDataURL 返回的 base64 解码为二进制，按 PNG 格式规范逐块解析：
+    每个 chunk 包含 <b>长度(4B) + 类型(4B) + 数据(nB) + CRC32(4B)</b>。
+    不同浏览器/OS 生成的 PNG 的 CRC 值、Gamma 元数据等存在差异，构成另一维度的指纹。
+  </div>
+  <div id="png-chunks-container">
+    <table class="chunk-table">
+      <thead>
+        <tr>
+          <th>数据块名称</th>
+          <th>长度 (bytes)</th>
+          <th>CRC32 (十六进制)</th>
+          <th>说明</th>
+        </tr>
+      </thead>
+      <tbody id="png-chunks-body">
+        <tr><td colspan="4" style="color:#666; font-style:italic;">等待检测...</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="result-row" style="margin-top:12px;">
+    <span class="result-label">IHDR 宽×高</span>
+    <span class="result-value info" id="res-ihdr-size">—</span>
+  </div>
+  <div class="result-row">
+    <span class="result-label">位深度 / 颜色类型</span>
+    <span class="result-value info" id="res-ihdr-depth">—</span>
+  </div>
+  <div class="result-row">
+    <span class="result-label">sRGB 渲染意图</span>
+    <span class="result-value info" id="res-srgb">—</span>
+  </div>
+  <div class="result-row">
+    <span class="result-label">Gamma 值</span>
+    <span class="result-value info" id="res-gamma">—</span>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════
+     Section 5: 一致性检测（篡改检测）
+     ══════════════════════════════════════════════════════ -->
+<h2>⑤ Canvas 指纹一致性检测（防篡改）</h2>
+
+<div class="test-card">
+  <h3>5.1 toDataURL 篡改检测（n0） <span class="badge badge-detect">篡改检测</span></h3>
+  <div class="desc">
+    分别对 <b>绘有标准测试图的 canvas</b> 和 <b>空白 canvas</b> 调用 toDataURL()，若两者返回值相同，
+    则说明 toDataURL 被插件劫持（始终返回固定值），这是指纹浏览器常见的规避手段。
+  </div>
+  <div class="canvas-container">
+    <div class="canvas-item">
+      <span class="canvas-label">canvas A（有内容）</span>
+      <canvas id="tampCanvasA" width="1" height="1"></canvas>
+    </div>
+    <div class="canvas-item">
+      <span class="canvas-label">canvas B（空白）</span>
+      <canvas id="tampCanvasB" width="1" height="1"></canvas>
+    </div>
+  </div>
+  <div class="result-row">
+    <span class="result-label">canvas A toDataURL() 长度</span>
+    <span class="result-value info" id="res-n0-a">—</span>
+  </div>
+  <div class="result-row">
+    <span class="result-label">canvas B toDataURL() 长度</span>
+    <span class="result-value info" id="res-n0-b">—</span>
+  </div>
+  <div class="result-row">
+    <span class="result-label">两者是否相同（相同=被篡改）</span>
+    <span class="result-value pending" id="res-n0">等待检测...</span>
+  </div>
+</div>
+
+<div class="test-card">
+  <h3>5.2 drawImage 像素级对比（a0） <span class="badge badge-detect">篡改检测</span></h3>
+  <div class="desc">
+    将 canvas A 通过 <code>toDataURL → Image → drawImage</code> 渲染到 canvas B，
+    再调用 <code>getImageData</code> 对比两个 canvas 的所有像素值。
+    正常情况下像素应完全一致；若插件在 draw 阶段修改像素，会在此被发现。
+  </div>
+  <div class="canvas-container">
+    <div class="canvas-item">
+      <span class="canvas-label">原始 canvas（getImageData 来源）</span>
+      <canvas id="a0CanvasA" width="1" height="1"></canvas>
+    </div>
+    <div class="canvas-item">
+      <span class="canvas-label">drawImage 后的 canvas</span>
+      <canvas id="a0CanvasB" width="1" height="1"></canvas>
+    </div>
+  </div>
+  <div class="result-row">
+    <span class="result-label">像素总数（RGBA 分量）</span>
+    <span class="result-value info" id="res-a0-pixelcount">—</span>
+  </div>
+  <div class="result-row">
+    <span class="result-label">差异像素数</span>
+    <span class="result-value info" id="res-a0-diff">—</span>
+  </div>
+  <div class="result-row">
+    <span class="result-label">像素完全一致（一致=正常）</span>
+    <span class="result-value pending" id="res-a0">等待检测...</span>
+  </div>
+</div>
+
+<div class="test-card">
+  <h3>5.3 OffscreenCanvas 一致性检测（x0） <span class="badge badge-detect">篡改检测</span></h3>
+  <div class="desc">
+    在主线程 canvas 和 OffscreenCanvas 上分别绘制相同内容：
+    主线程用 <code>toDataURL()</code> 获取 base64；
+    OffscreenCanvas 用 <code>convertToBlob → FileReader.readAsDataURL</code> 获取 base64，
+    对比两者是否相同。
+  </div>
+  <div class="result-row">
+    <span class="result-label">主线程 toDataURL() 长度</span>
+    <span class="result-value info" id="res-x0-main">—</span>
+  </div>
+  <div class="result-row">
+    <span class="result-label">OffscreenCanvas Base64 长度</span>
+    <span class="result-value info" id="res-x0-off">—</span>
+  </div>
+  <div class="result-row">
+    <span class="result-label">两者一致性（一致=正常）</span>
+    <span class="result-value pending" id="res-x0">等待检测...</span>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════
+     Section 6: Canvas 像素噪声检测
+     ══════════════════════════════════════════════════════ -->
+<h2>⑥ Canvas 像素噪声检测（Blink 专属 o0）</h2>
+
+<div class="test-card">
+  <h3>6.1 像素噪声注入检测 <span class="badge badge-noise">噪声检测</span></h3>
+  <div class="desc">
+    此检测仅在 Blink 引擎（Chrome/Edge）下有意义。
+    在 21×120 画布上绘制字符 "H"（#66666666，18pt Arial），然后：<br>
+    1. 调用 <code>toDataURL()</code> 导出为 Image<br>
+    2. 将 Image drawImage 到另一个 canvas<br>
+    3. 用 <code>getImageData</code> 对比两个 canvas 的像素差异<br>
+    4. 排除已知的边框扰动像素（约 54 个边缘索引），只关注<b>中心区域差异</b>。<br>
+    若中心区域像素值不同 → 说明插件注入了随机噪声。
+  </div>
+  <div class="canvas-container">
+    <div class="canvas-item">
+      <span class="canvas-label">原始 canvas（21×120）</span>
+      <canvas id="noiseCanvasA" width="21" height="120" style="width:63px;height:360px; image-rendering:pixelated;"></canvas>
+    </div>
+    <div class="canvas-item">
+      <span class="canvas-label">drawImage 后 canvas（放大 3x）</span>
+      <canvas id="noiseCanvasB" width="21" height="120" style="width:63px;height:360px; image-rendering:pixelated;"></canvas>
+    </div>
+    <div class="canvas-item">
+      <span class="canvas-label">差异可视化（红=差异, 绿=排除边框, 蓝=一致）</span>
+      <canvas id="noiseDiffCanvas" width="21" height="120" style="width:63px;height:360px; image-rendering:pixelated;"></canvas>
+    </div>
+  </div>
+  <div class="diff-info">已知边框扰动像素索引（排除）: 131–140, 153–160, 174–180, 195–201, 216–222, 237–243, 258–264, 278–287 等</div>
+  <div class="result-row" style="margin-top:10px;">
+    <span class="result-label">Blink 引擎检测</span>
+    <span class="result-value info" id="res-o0-blink">—</span>
+  </div>
+  <div class="result-row">
+    <span class="result-label">总差异像素数</span>
+    <span class="result-value info" id="res-o0-total-diff">—</span>
+  </div>
+  <div class="result-row">
+    <span class="result-label">非边框区域差异像素数（关键）</span>
+    <span class="result-value pending" id="res-o0-center-diff">—</span>
+  </div>
+  <div class="result-row">
+    <span class="result-label">差异像素值详情</span>
+    <span class="result-value info" id="res-o0-values" style="font-size:11px;">—</span>
+  </div>
+  <div class="result-row">
+    <span class="result-label">噪声注入判定</span>
+    <span class="result-value pending" id="res-o0-verdict">等待检测...</span>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════
+     Section 7: 综合测试日志
+     ══════════════════════════════════════════════════════ -->
+<h2>⑦ 综合检测日志</h2>
+<div class="log-panel" id="logPanel"></div>
+
+<!-- ═══════════════════════════════════════════════════════
+     Section 8: 综合结果汇总
+     ══════════════════════════════════════════════════════ -->
+<div id="summary">
+  <h2>检测结果汇总</h2>
+  <div class="summary-grid">
+    <div class="summary-item">
+      <div class="s-label">Canvas 2D API</div>
+      <div class="s-value" id="sum-api">—</div>
+    </div>
+    <div class="summary-item">
+      <div class="s-label">toDataURL Native</div>
+      <div class="s-value" id="sum-native">—</div>
+    </div>
+    <div class="summary-item">
+      <div class="s-label">OffscreenCanvas</div>
+      <div class="s-value" id="sum-offscreen">—</div>
+    </div>
+    <div class="summary-item">
+      <div class="s-label">toDataURL 篡改（n0）</div>
+      <div class="s-value" id="sum-n0">—</div>
+    </div>
+    <div class="summary-item">
+      <div class="s-label">像素一致性（a0）</div>
+      <div class="s-value" id="sum-a0">—</div>
+    </div>
+    <div class="summary-item">
+      <div class="s-label">OffscreenCanvas 一致（x0）</div>
+      <div class="s-value" id="sum-x0">—</div>
+    </div>
+    <div class="summary-item">
+      <div class="s-label">像素噪声注入</div>
+      <div class="s-value" id="sum-o0">—</div>
+    </div>
+    <div class="summary-item">
+      <div class="s-label">PNG 文件大小</div>
+      <div class="s-value" id="sum-filesize">—</div>
+    </div>
+  </div>
+</div>
+
+<script src="canvas-depth-detection.js"></script>
+</body>
+</html>

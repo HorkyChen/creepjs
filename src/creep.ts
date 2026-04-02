@@ -682,6 +682,7 @@ import getBestWorkerScope, { Scope, spawnWorker, workerScopeHTML } from './worke
 				<a class="tests" href="./tests/workers.html">Workers</a>
 				<br><a class="tests" href="./tests/iframes.html">Iframes</a>
 				<br><a class="tests" href="./tests/canvas-checker.html">Canvas Checker</a>
+				<br><a class="tests" href="./tests/canvas-depth-detection.html">Canvas Depth Detection</a>
 				<br><a class="tests" href="./tests/bot-detection.html">Bot Detection</a>
 				<br><a class="tests" href="./tests/fonts.html">Fonts</a>
 				<br><a class="tests" href="./tests/timezone.html">Timezone</a>

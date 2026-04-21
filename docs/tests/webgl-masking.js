@@ -7,7 +7,6 @@ const els = {
   glCanvas: document.getElementById('glCanvas'),
   previewCanvas: document.getElementById('previewCanvas'),
   runBtn: document.getElementById('runBtn'),
-  noiseToggle: document.getElementById('noiseToggle'),
   statusBadge: document.getElementById('statusBadge'),
   resultText: document.getElementById('resultText'),
   noiseText: document.getElementById('noiseText'),
@@ -94,7 +93,7 @@ function paintPreview(pixelBytes, width, height) {
 
 async function runCheck() {
   const canvas = els.glCanvas;
-  const noiseEnabled = els.noiseToggle.checked;
+  const noiseEnabled = false;
   els.noiseText.textContent = noiseEnabled ? '已开启' : '未开启';
   els.noiseText.className = noiseEnabled ? 'v warn' : 'v ok';
 
@@ -152,6 +151,223 @@ async function runCheck() {
   }
 }
 
+function drawTriangle(gl, canvas) {
+  const vertexBuffer = gl.createBuffer();
+  gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer);
+  gl.bufferData(
+    gl.ARRAY_BUFFER,
+    new Float32Array([
+       0.0,  0.95, 0,
+      -0.95, -0.95, 0,
+       0.95, -0.95, 0,
+    ]),
+    gl.STATIC_DRAW
+  );
+
+  const vertexShader = gl.createShader(gl.VERTEX_SHADER);
+  gl.shaderSource(vertexShader, 'attribute vec3 coordinates; void main(void) { gl_Position = vec4(coordinates, 1.0); }');
+  gl.compileShader(vertexShader);
+
+  const fragmentShader = gl.createShader(gl.FRAGMENT_SHADER);
+  gl.shaderSource(fragmentShader, 'void main(void) { gl_FragColor = vec4(1.0, 0.0, 0.0, 1.0); }');
+  gl.compileShader(fragmentShader);
+
+  const program = gl.createProgram();
+  gl.attachShader(program, vertexShader);
+  gl.attachShader(program, fragmentShader);
+  gl.linkProgram(program);
+  gl.useProgram(program);
+
+  gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer);
+  const coord = gl.getAttribLocation(program, 'coordinates');
+  gl.vertexAttribPointer(coord, 3, gl.FLOAT, false, 0, 0);
+  gl.enableVertexAttribArray(coord);
+
+  gl.clearColor(0, 0, 0, 0);
+  gl.enable(gl.DEPTH_TEST);
+  gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+  gl.viewport(0, 0, canvas.width, canvas.height);
+  gl.drawArrays(gl.TRIANGLES, 0, 3);
+  gl.finish();
+}
+
+function drawCircle(gl, canvas) {
+  const segments = 64;
+  const verts = [0, 0, 0];
+  for (let i = 0; i <= segments; i++) {
+    const angle = (i / segments) * Math.PI * 2;
+    verts.push(Math.cos(angle) * 0.75, Math.sin(angle) * 0.75, 0);
+  }
+
+  const vertexBuffer = gl.createBuffer();
+  gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer);
+  gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(verts), gl.STATIC_DRAW);
+
+  const vertexShader = gl.createShader(gl.VERTEX_SHADER);
+  gl.shaderSource(vertexShader, 'attribute vec3 coordinates; void main(void) { gl_Position = vec4(coordinates, 1.0); }');
+  gl.compileShader(vertexShader);
+
+  const fragmentShader = gl.createShader(gl.FRAGMENT_SHADER);
+  gl.shaderSource(fragmentShader, 'void main(void) { gl_FragColor = vec4(1.0, 0.0, 0.0, 1.0); }');
+  gl.compileShader(fragmentShader);
+
+  const program = gl.createProgram();
+  gl.attachShader(program, vertexShader);
+  gl.attachShader(program, fragmentShader);
+  gl.linkProgram(program);
+  gl.useProgram(program);
+
+  gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer);
+  const coord = gl.getAttribLocation(program, 'coordinates');
+  gl.vertexAttribPointer(coord, 3, gl.FLOAT, false, 0, 0);
+  gl.enableVertexAttribArray(coord);
+
+  gl.clearColor(0, 0, 0, 0);
+  gl.enable(gl.DEPTH_TEST);
+  gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+  gl.viewport(0, 0, canvas.width, canvas.height);
+  gl.drawArrays(gl.TRIANGLE_FAN, 0, segments + 2);
+  gl.finish();
+}
+
+function drawRectAlpha05(gl, canvas) {
+  const indices = [3, 2, 1, 3, 1, 0];
+
+  const vertexBuffer = gl.createBuffer();
+  gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer);
+  gl.bufferData(
+    gl.ARRAY_BUFFER,
+    new Float32Array([
+      -0.75,  0.75, 0,
+      -0.75, -0.75, 0,
+       0.75, -0.75, 0,
+       0.75,  0.75, 0,
+    ]),
+    gl.STATIC_DRAW
+  );
+  gl.bindBuffer(gl.ARRAY_BUFFER, null);
+
+  const indexBuffer = gl.createBuffer();
+  gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, indexBuffer);
+  gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(indices), gl.STATIC_DRAW);
+  gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, null);
+
+  const vertexShader = gl.createShader(gl.VERTEX_SHADER);
+  gl.shaderSource(vertexShader, 'attribute vec3 coordinates; void main(void) { gl_Position = vec4(coordinates, 1.0); }');
+  gl.compileShader(vertexShader);
+
+  const fragmentShader = gl.createShader(gl.FRAGMENT_SHADER);
+  gl.shaderSource(fragmentShader, 'void main(void) { gl_FragColor = vec4(1.0, 1.0, 0.0, 1.0); }');
+  gl.compileShader(fragmentShader);
+
+  const program = gl.createProgram();
+  gl.attachShader(program, vertexShader);
+  gl.attachShader(program, fragmentShader);
+  gl.linkProgram(program);
+  gl.useProgram(program);
+
+  gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer);
+  gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, indexBuffer);
+  const coord = gl.getAttribLocation(program, 'coordinates');
+  gl.vertexAttribPointer(coord, 3, gl.FLOAT, false, 0, 0);
+  gl.enableVertexAttribArray(coord);
+
+  gl.clearColor(0, 0, 0, 0);
+  gl.enable(gl.DEPTH_TEST);
+  gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+  gl.viewport(0, 0, canvas.width, canvas.height);
+  gl.drawElements(gl.TRIANGLES, indices.length, gl.UNSIGNED_SHORT, 0);
+  gl.finish();
+}
+
+function drawRectOrange(gl, canvas) {
+  const indices = [3, 2, 1, 3, 1, 0];
+
+  const vertexBuffer = gl.createBuffer();
+  gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer);
+  gl.bufferData(
+    gl.ARRAY_BUFFER,
+    new Float32Array([
+      -0.75,  0.75, 0,
+      -0.75, -0.75, 0,
+       0.75, -0.75, 0,
+       0.75,  0.75, 0,
+    ]),
+    gl.STATIC_DRAW
+  );
+  gl.bindBuffer(gl.ARRAY_BUFFER, null);
+
+  const indexBuffer = gl.createBuffer();
+  gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, indexBuffer);
+  gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(indices), gl.STATIC_DRAW);
+  gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, null);
+
+  const vertexShader = gl.createShader(gl.VERTEX_SHADER);
+  gl.shaderSource(vertexShader, 'attribute vec3 coordinates; void main(void) { gl_Position = vec4(coordinates, 1.0); }');
+  gl.compileShader(vertexShader);
+
+  const fragmentShader = gl.createShader(gl.FRAGMENT_SHADER);
+  gl.shaderSource(fragmentShader, 'void main(void) { gl_FragColor = vec4(1.0, 0.647, 0.0, 1.0); }');
+  gl.compileShader(fragmentShader);
+
+  const program = gl.createProgram();
+  gl.attachShader(program, vertexShader);
+  gl.attachShader(program, fragmentShader);
+  gl.linkProgram(program);
+  gl.useProgram(program);
+
+  gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer);
+  gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, indexBuffer);
+  const coord = gl.getAttribLocation(program, 'coordinates');
+  gl.vertexAttribPointer(coord, 3, gl.FLOAT, false, 0, 0);
+  gl.enableVertexAttribArray(coord);
+
+  gl.clearColor(0, 0, 0, 0);
+  gl.enable(gl.DEPTH_TEST);
+  gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+  gl.viewport(0, 0, canvas.width, canvas.height);
+  gl.drawElements(gl.TRIANGLES, indices.length, gl.UNSIGNED_SHORT, 0);
+  gl.finish();
+}
+
+async function runExtraCheck(canvasId, previewId, hashId, drawFn) {
+  const canvas = document.getElementById(canvasId);
+  const preview = document.getElementById(previewId);
+  const hashEl = document.getElementById(hashId);
+
+  const gl = canvas.getContext('webgl', { preserveDrawingBuffer: true })
+    || canvas.getContext('experimental-webgl', { preserveDrawingBuffer: true });
+
+  if (!gl) {
+    hashEl.textContent = 'WebGL 不支持';
+    hashEl.className = 'v bad';
+    return;
+  }
+
+  drawFn(gl, canvas);
+
+  await new Promise(requestAnimationFrame);
+  gl.finish();
+
+  const pixels = new Uint8Array(gl.drawingBufferWidth * gl.drawingBufferHeight * 4);
+  gl.readPixels(0, 0, gl.drawingBufferWidth, gl.drawingBufferHeight, gl.RGBA, gl.UNSIGNED_BYTE, pixels);
+
+  const ctx = preview.getContext('2d');
+  ctx.putImageData(new ImageData(new Uint8ClampedArray(pixels), gl.drawingBufferWidth, gl.drawingBufferHeight), 0, 0);
+
+  const hash = await sha256Hex(pixels);
+  hashEl.textContent = hash;
+}
+
+async function runExtraChecks() {
+  await Promise.all([
+    runExtraCheck('triCanvas',     'triPreview',    'triHash',    drawTriangle),
+    runExtraCheck('circCanvas',    'circPreview',   'circHash',   drawCircle),
+    runExtraCheck('rectA5Canvas',  'rectA5Preview', 'rectA5Hash', drawRectAlpha05),
+    runExtraCheck('rectOrgCanvas', 'rectOrgPreview','rectOrgHash',drawRectOrange),
+  ]);
+}
+
 els.runBtn.addEventListener('click', runCheck);
-els.noiseToggle.addEventListener('change', runCheck);
 runCheck();
+runExtraChecks();

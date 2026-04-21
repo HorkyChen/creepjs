@@ -180,10 +180,6 @@
 
     <div class="toolbar">
       <button id="runBtn">重新检测</button>
-      <label>
-        <input type="checkbox" id="noiseToggle" />
-        注入轻微 noise，模拟被篡改的 WebGL 输出
-      </label>
     </div>
 
     <div class="grid">
@@ -256,6 +252,81 @@
         <div id="bytePreview" class="code" style="margin-top:10px;">-</div>
         <div class="notes" style="margin-top:10px;">说明：即使不勾选 noise，若你的浏览器环境本身已被改写或输出与基准不同，这里也会直接显示不匹配。</div>
       </section>
+    </div>
+
+    <h2 style="margin: 32px 0 16px; font-size: 22px;">额外绘制测试（readPixels Hash）</h2>
+    <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 18px;">
+      <div class="card">
+        <h2>测试 1：三角形（红色, alpha=1.0）</h2>
+        <div class="canvas-row">
+          <div class="canvas-box">
+            <h3>WebGL 绘制</h3>
+            <canvas id="triCanvas" width="256" height="256"></canvas>
+          </div>
+          <div class="canvas-box">
+            <h3>像素预览</h3>
+            <canvas id="triPreview" width="256" height="256"></canvas>
+          </div>
+        </div>
+        <div class="metric" style="margin-top: 12px;">
+          <div class="k">readPixels SHA-256</div>
+          <div id="triHash" class="v">-</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>测试 2：圆形（红色, alpha=1.0）</h2>
+        <div class="canvas-row">
+          <div class="canvas-box">
+            <h3>WebGL 绘制</h3>
+            <canvas id="circCanvas" width="256" height="256"></canvas>
+          </div>
+          <div class="canvas-box">
+            <h3>像素预览</h3>
+            <canvas id="circPreview" width="256" height="256"></canvas>
+          </div>
+        </div>
+        <div class="metric" style="margin-top: 12px;">
+          <div class="k">readPixels SHA-256</div>
+          <div id="circHash" class="v">-</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>测试 3：方框（黄色, alpha=1.0）</h2>
+        <div class="canvas-row">
+          <div class="canvas-box">
+            <h3>WebGL 绘制</h3>
+            <canvas id="rectA5Canvas" width="256" height="64"></canvas>
+          </div>
+          <div class="canvas-box">
+            <h3>像素预览</h3>
+            <canvas id="rectA5Preview" width="256" height="64"></canvas>
+          </div>
+        </div>
+        <div class="metric" style="margin-top: 12px;">
+          <div class="k">readPixels SHA-256</div>
+          <div id="rectA5Hash" class="v">-</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>测试 4：方框（橙色, alpha=1.0）</h2>
+        <div class="canvas-row">
+          <div class="canvas-box">
+            <h3>WebGL 绘制</h3>
+            <canvas id="rectOrgCanvas" width="256" height="24"></canvas>
+          </div>
+          <div class="canvas-box">
+            <h3>像素预览</h3>
+            <canvas id="rectOrgPreview" width="256" height="24"></canvas>
+          </div>
+        </div>
+        <div class="metric" style="margin-top: 12px;">
+          <div class="k">readPixels SHA-256</div>
+          <div id="rectOrgHash" class="v">-</div>
+        </div>
+      </div>
     </div>
   </div>
 

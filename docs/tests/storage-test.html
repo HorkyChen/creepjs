@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Storage 存储测试 — IndexedDB / Cookies / LocalStorage</title>
+  <style>
+    :root {
+      --bg: #0b1020;
+      --panel: #151c33;
+      --panel-2: #1b2442;
+      --line: #2d3a66;
+      --text: #e9eefc;
+      --muted: #96a3c7;
+      --ok: #27d799;
+      --warn: #ffb347;
+      --bad: #ff5c7a;
+      --blue: #61a8ff;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang SC", sans-serif;
+      background: linear-gradient(180deg, #09101f 0%, #0e1430 100%);
+      color: var(--text);
+      padding: 24px;
+      line-height: 1.5;
+      min-height: 100vh;
+    }
+    h1 {
+      text-align: center;
+      font-size: 1.6rem;
+      margin: 0 0 32px;
+      color: var(--blue);
+      letter-spacing: 0.04em;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+      gap: 24px;
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+    .card {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 20px;
+    }
+    .card h2 {
+      margin: 0 0 16px;
+      font-size: 1rem;
+      color: var(--warn);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .card h2 span.badge {
+      font-size: 0.65rem;
+      padding: 2px 8px;
+      border-radius: 20px;
+      background: var(--panel-2);
+      color: var(--muted);
+      border: 1px solid var(--line);
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.82rem;
+      margin-bottom: 14px;
+    }
+    thead th {
+      text-align: left;
+      color: var(--muted);
+      font-weight: 500;
+      padding: 4px 6px 8px;
+      border-bottom: 1px solid var(--line);
+    }
+    tbody tr:hover { background: var(--panel-2); }
+    td {
+      padding: 5px 6px;
+      border-bottom: 1px solid rgba(45,58,102,0.4);
+      word-break: break-all;
+      vertical-align: top;
+    }
+    td.key { color: var(--blue); width: 38%; }
+    td.val { color: var(--ok); }
+    .empty-row td {
+      text-align: center;
+      color: var(--muted);
+      font-style: italic;
+      padding: 12px;
+    }
+    .btn {
+      display: inline-block;
+      padding: 8px 18px;
+      border: none;
+      border-radius: 7px;
+      cursor: pointer;
+      font-size: 0.85rem;
+      font-weight: 600;
+      transition: opacity 0.15s, transform 0.1s;
+    }
+    .btn:hover { opacity: 0.85; transform: translateY(-1px); }
+    .btn:active { transform: translateY(0); opacity: 1; }
+    .btn-write { background: var(--blue); color: #fff; }
+    .btn-clear { background: transparent; color: var(--bad); border: 1px solid var(--bad); margin-left: 8px; }
+    .actions { display: flex; align-items: center; margin-top: 4px; }
+    .status {
+      margin-top: 10px;
+      font-size: 0.78rem;
+      min-height: 1.2em;
+      color: var(--ok);
+    }
+    .status.error { color: var(--bad); }
+  </style>
+</head>
+<body>
+<h1>Storage 存储测试</h1>
+
+<div class="grid">
+  <!-- LocalStorage -->
+  <div class="card" id="ls-card">
+    <h2>🗂 LocalStorage <span class="badge">持久</span></h2>
+    <table>
+      <thead><tr><th>Key</th><th>Value</th></tr></thead>
+      <tbody id="ls-tbody"><tr class="empty-row"><td colspan="2">读取中…</td></tr></tbody>
+    </table>
+    <div class="actions">
+      <button class="btn btn-write" id="ls-write-btn">写入 3 个键值</button>
+      <button class="btn btn-clear" id="ls-clear-btn">清除</button>
+    </div>
+    <div class="status" id="ls-status"></div>
+  </div>
+
+  <!-- Cookies -->
+  <div class="card" id="ck-card">
+    <h2>🍪 Cookies <span class="badge">有效期 7 天</span></h2>
+    <table>
+      <thead><tr><th>Key</th><th>Value</th></tr></thead>
+      <tbody id="ck-tbody"><tr class="empty-row"><td colspan="2">读取中…</td></tr></tbody>
+    </table>
+    <div class="actions">
+      <button class="btn btn-write" id="ck-write-btn">写入 3 个键值</button>
+      <button class="btn btn-clear" id="ck-clear-btn">清除</button>
+    </div>
+    <div class="status" id="ck-status"></div>
+  </div>
+
+  <!-- IndexedDB -->
+  <div class="card" id="idb-card">
+    <h2>🗄 IndexedDB <span class="badge">结构化</span></h2>
+    <table>
+      <thead><tr><th>Key</th><th>Value</th></tr></thead>
+      <tbody id="idb-tbody"><tr class="empty-row"><td colspan="2">读取中…</td></tr></tbody>
+    </table>
+    <div class="actions">
+      <button class="btn btn-write" id="idb-write-btn">写入 3 个键值</button>
+      <button class="btn btn-clear" id="idb-clear-btn">清除</button>
+    </div>
+    <div class="status" id="idb-status"></div>
+  </div>
+</div>
+
+<script src="storage-test.js"></script>
+</body>
+</html>

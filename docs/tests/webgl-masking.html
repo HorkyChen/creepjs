@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>WebGL Masking 检测模拟</title>
+  <style>
+    :root {
+      --bg: #0b1020;
+      --panel: #151c33;
+      --panel-2: #1b2442;
+      --line: #2d3a66;
+      --text: #e9eefc;
+      --muted: #96a3c7;
+      --ok: #27d799;
+      --warn: #ffb347;
+      --bad: #ff5c7a;
+      --blue: #61a8ff;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang SC", sans-serif;
+      background: linear-gradient(180deg, #09101f 0%, #0e1430 100%);
+      color: var(--text);
+      padding: 24px;
+      line-height: 1.5;
+    }
+    .wrap {
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+    h1 {
+      margin: 0 0 8px;
+      font-size: 28px;
+    }
+    .subtitle {
+      color: var(--muted);
+      margin: 0 0 20px;
+    }
+    .toolbar {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+      flex-wrap: wrap;
+      margin-bottom: 20px;
+    }
+    button {
+      border: none;
+      border-radius: 999px;
+      padding: 10px 18px;
+      font-weight: 700;
+      cursor: pointer;
+      background: linear-gradient(90deg, #61a8ff, #27d799);
+      color: #07111f;
+    }
+    label {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      color: var(--muted);
+      background: rgba(255,255,255,0.04);
+      border: 1px solid var(--line);
+      padding: 10px 14px;
+      border-radius: 999px;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: 1.15fr 0.85fr;
+      gap: 18px;
+    }
+    .card {
+      background: rgba(21, 28, 51, 0.96);
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 16px;
+      box-shadow: 0 10px 24px rgba(0,0,0,0.2);
+    }
+    .card h2 {
+      margin: 0 0 12px;
+      font-size: 18px;
+    }
+    .canvas-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+    .canvas-box {
+      background: var(--panel-2);
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 12px;
+    }
+    .canvas-box h3 {
+      margin: 0 0 8px;
+      font-size: 13px;
+      color: var(--muted);
+      font-weight: 600;
+    }
+    canvas {
+      width: 100%;
+      max-width: 100%;
+      background: #000;
+      border-radius: 8px;
+      border: 1px solid #3a4a80;
+      image-rendering: pixelated;
+    }
+    .metrics {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+      margin-top: 14px;
+    }
+    .metric {
+      background: var(--panel-2);
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 12px;
+      min-height: 78px;
+    }
+    .metric .k {
+      font-size: 12px;
+      color: var(--muted);
+      margin-bottom: 6px;
+    }
+    .metric .v {
+      font-size: 14px;
+      word-break: break-all;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    }
+    .ok { color: var(--ok); }
+    .bad { color: var(--bad); }
+    .warn { color: var(--warn); }
+    .code {
+      background: #0b1227;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 12px;
+      font-size: 12px;
+      color: #c9d5ff;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      word-break: break-all;
+      white-space: pre-wrap;
+    }
+    .status {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      border-radius: 999px;
+      padding: 8px 12px;
+      font-weight: 700;
+      margin-bottom: 12px;
+      background: #1a2546;
+      border: 1px solid var(--line);
+    }
+    .status.ok { color: var(--ok); }
+    .status.bad { color: var(--bad); }
+    .notes {
+      color: var(--muted);
+      font-size: 13px;
+      margin-top: 8px;
+    }
+    .list {
+      margin: 0;
+      padding-left: 18px;
+      color: var(--muted);
+    }
+    .list li { margin: 6px 0; }
+    @media (max-width: 900px) {
+      .grid, .canvas-row, .metrics { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>WebGL Masking 检测模拟页</h1>
+    <p class="subtitle">
+      模拟 Pixelscan 的红框 WebGL 检查流程：绘制固定图形 → 读取像素 → 计算哈希 → 与期望值比较。
+    </p>
+
+    <div class="toolbar">
+      <button id="runBtn">重新检测</button>
+      <label>
+        <input type="checkbox" id="noiseToggle" />
+        注入轻微 noise，模拟被篡改的 WebGL 输出
+      </label>
+    </div>
+
+    <div class="grid">
+      <section class="card">
+        <h2>可视化结果</h2>
+        <div id="statusBadge" class="status">等待检测</div>
+        <div class="canvas-row">
+          <div class="canvas-box">
+            <h3>原始 WebGL 红框</h3>
+            <canvas id="glCanvas" width="256" height="24"></canvas>
+          </div>
+          <div class="canvas-box">
+            <h3>读取回来的像素预览</h3>
+            <canvas id="previewCanvas" width="256" height="24"></canvas>
+          </div>
+        </div>
+
+        <div class="metrics">
+          <div class="metric">
+            <div class="k">检测结论</div>
+            <div id="resultText" class="v">-</div>
+          </div>
+          <div class="metric">
+            <div class="k">是否启用 noise</div>
+            <div id="noiseText" class="v">-</div>
+          </div>
+          <div class="metric">
+            <div class="k">WebGL 支持</div>
+            <div id="supportText" class="v">-</div>
+          </div>
+          <div class="metric">
+            <div class="k">像素字节数</div>
+            <div id="byteCount" class="v">-</div>
+          </div>
+          <div class="metric">
+            <div class="k">WebGL Vendor</div>
+            <div id="vendorText" class="v">-</div>
+          </div>
+          <div class="metric">
+            <div class="k">WebGL Renderer</div>
+            <div id="rendererText" class="v">-</div>
+          </div>
+        </div>
+      </section>
+
+      <section class="card">
+        <h2>哈希对比</h2>
+        <div class="metric" style="margin-bottom:10px;">
+          <div class="k">当前 WebGL Data Hash（严格复刻检测）</div>
+          <div id="actualHash" class="v">-</div>
+        </div>
+        <div class="metric" style="margin-bottom:10px;">
+          <div class="k">期望 Hash</div>
+          <div id="expectedHash" class="v">bf9da7959d914298f9ce9e41a480fd66f76fac5c6f5e0a9b5a99b18cfc6fd997</div>
+        </div>
+        <div class="metric">
+          <div class="k">是否匹配</div>
+          <div id="matchText" class="v">-</div>
+        </div>
+
+        <h2 style="margin-top:16px;">检测逻辑说明</h2>
+        <ul class="list">
+          <li>使用 WebGL 绘制固定红色矩形。</li>
+          <li>通过 readPixels 读取整块像素。</li>
+          <li>对像素字节做 SHA-256 哈希。</li>
+          <li>若哈希不等于内置期望值，则判定为 Masking detected。</li>
+        </ul>
+
+        <div class="notes">下方会显示当前采样前 64 个字节，便于观察 noise 造成的变化。</div>
+        <div id="bytePreview" class="code" style="margin-top:10px;">-</div>
+        <div class="notes" style="margin-top:10px;">说明：即使不勾选 noise，若你的浏览器环境本身已被改写或输出与基准不同，这里也会直接显示不匹配。</div>
+      </section>
+    </div>
+  </div>
+
+  <script src="webgl-masking.js"></script>
+</body>
+</html>

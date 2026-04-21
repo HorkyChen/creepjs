@@ -696,6 +696,8 @@ import getBestWorkerScope, { Scope, spawnWorker, workerScopeHTML } from './worke
 				<br><a class="tests" href="./tests/extensions.html">Chrome Extensions</a>
 				<br><a class="tests" href="./tests/proxy.html">JS Proxy</a>
 				<br><a class="tests" href="./tests/browser-checker.html">Browser Checker</a>
+				<br><a class="tests" href="./tests/webgl-masking.html">WebGL Masking</a>
+				<br><a class="tests" href="./tests/storage-test.html">Storage Test</a>
 			</div>
 		</div>
 	</div>

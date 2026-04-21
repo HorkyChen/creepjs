@@ -363,7 +363,7 @@
 	const style = getComputedStyle(document.body)
 	const cssTouch = style.getPropertyValue('--any-pointer').trim()
 	const cssTouchLie = cssTouch != 'coarse' && maxTouchPoints > 0
-	const anyPointerLie = cssTouch == 'coarse' && maxTouchPoints == 0
+	const anyPointerLie = cssTouch == 'coarse' && maxTouchPoints == 0``
 
 	console.log(res)
 	const perf = performance.now() - start

@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  <link rel="icon" href="../favicon.ico">
+  <link rel="stylesheet" href="../style.min.css">
+  <title>AudioContext Test | CreepJS</title>
+  <style>
+    .ac-wrap {
+      max-width: 1200px;
+      margin: 16px auto;
+      padding: 0 12px;
+    }
+    .ac-card {
+      border: 1px solid #d9d9d9;
+      border-radius: 10px;
+      padding: 14px;
+      margin-bottom: 14px;
+      background: #fff;
+    }
+    .ac-toolbar {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+    .ac-toolbar button {
+      padding: 7px 12px;
+      border: 1px solid #999;
+      border-radius: 8px;
+      background: #f8f8f8;
+      cursor: pointer;
+    }
+    .ac-toolbar button:disabled {
+      opacity: 0.6;
+      cursor: default;
+    }
+    .ac-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 14px;
+    }
+    .ac-table-wrap {
+      overflow: auto;
+    }
+    .ac-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 12px;
+    }
+    .ac-table th,
+    .ac-table td {
+      border-bottom: 1px solid #e5e5e5;
+      padding: 6px 8px;
+      text-align: left;
+      white-space: nowrap;
+    }
+    .ac-pass { color: #0a7b2e; font-weight: 700; }
+    .ac-fail { color: #a30000; font-weight: 700; }
+    .ac-warn { color: #9c5f00; font-weight: 700; }
+    .ac-muted { color: #777; }
+    .ac-log {
+      background: #0f172a;
+      color: #dbeafe;
+      border-radius: 8px;
+      padding: 10px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: 12px;
+      line-height: 1.5;
+      white-space: pre-wrap;
+      max-height: 330px;
+      overflow: auto;
+    }
+    .ac-status {
+      font-weight: 700;
+      padding: 2px 8px;
+      border-radius: 999px;
+      border: 1px solid #d0d0d0;
+      background: #f6f6f6;
+    }
+    .ac-kv {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      align-items: center;
+      font-size: 12px;
+    }
+    .ac-kv input,
+    .ac-kv select {
+      border: 1px solid #c7c7c7;
+      border-radius: 6px;
+      padding: 3px 6px;
+      font-size: 12px;
+      width: 86px;
+    }
+    @media (max-width: 900px) {
+      .ac-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="ac-wrap">
+    <div class="ac-card">
+      <h2 style="margin:0 0 8px;">AudioContext Test</h2>
+      <div class="ac-muted" style="margin-bottom: 8px;">
+        Combined test page for OfflineAudioContext sample-rate accuracy and probe-style analyser behavior.
+      </div>
+      <div class="ac-toolbar">
+        <button id="runAllBtn">Run All Tests</button>
+        <span id="allStatus" class="ac-status">Idle</span>
+      </div>
+    </div>
+
+    <div class="ac-grid">
+      <section class="ac-card">
+        <h3 style="margin-top:0;">Sample Rate Accuracy</h3>
+        <div class="ac-muted" style="margin-bottom: 8px;">Runs 3 checks: rate honoring, FFT bin placement, and zero crossing.</div>
+        <div class="ac-table-wrap">
+          <table class="ac-table">
+            <thead>
+              <tr>
+                <th>Requested</th>
+                <th>ctx.sampleRate</th>
+                <th>buffer.sampleRate</th>
+                <th>length</th>
+                <th>duration</th>
+                <th>Result</th>
+              </tr>
+            </thead>
+            <tbody id="t1body"></tbody>
+          </table>
+        </div>
+        <div class="ac-table-wrap" style="margin-top: 10px;">
+          <table class="ac-table">
+            <thead>
+              <tr>
+                <th>Tone</th>
+                <th>Expected Bin</th>
+                <th>Actual Bin</th>
+                <th>Bin Err</th>
+                <th>Peak dB</th>
+                <th>Implied Rate</th>
+                <th>Result</th>
+              </tr>
+            </thead>
+            <tbody id="t2body"></tbody>
+          </table>
+        </div>
+        <div class="ac-table-wrap" style="margin-top: 10px;">
+          <table class="ac-table">
+            <thead>
+              <tr>
+                <th>Tone</th>
+                <th>Samples</th>
+                <th>Expected ZC</th>
+                <th>Actual ZC</th>
+                <th>Deviation</th>
+                <th>Implied Rate</th>
+                <th>Result</th>
+              </tr>
+            </thead>
+            <tbody id="t3body"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="ac-card">
+        <h3 style="margin-top:0;">Probe Audio Simulation</h3>
+        <div class="ac-kv" style="margin-bottom: 8px;">
+          <label for="renderChannels">channels</label>
+          <select id="renderChannels">
+            <option value="1">1</option>
+            <option value="2" selected>2</option>
+          </select>
+          <label for="renderSamples">renderSamples</label>
+          <input id="renderSamples" type="number" min="1" step="1" value="500" />
+          <button id="runProbeBtn">Run Probe Sim</button>
+          <span id="probeStatus" class="ac-status">Idle</span>
+        </div>
+        <div class="ac-muted" style="margin-bottom: 8px;">
+          Uses oncomplete + getFloatFrequencyData + filter(x &gt; -Infinity) + reduce(no initial value).
+        </div>
+        <div id="probeLog" class="ac-log"></div>
+      </section>
+    </div>
+
+    <section class="ac-card">
+      <h3 style="margin-top:0;">Raw Log</h3>
+      <div id="log" class="ac-log"></div>
+    </section>
+  </div>
+
+  <script src="audiocontext.js"></script>
+</body>
+
+</html>

@@ -8,30 +8,60 @@
   <link rel="stylesheet" href="../style.min.css">
   <title>AudioContext Test | CreepJS</title>
   <style>
+    :root {
+      --ac-bg: #101827;
+      --ac-card: rgba(15, 23, 42, 0.9);
+      --ac-card-soft: rgba(18, 33, 62, 0.92);
+      --ac-border: #28415f;
+      --ac-border-soft: rgba(96, 165, 250, 0.18);
+      --ac-text: #e5eefc;
+      --ac-muted: #92a4bd;
+      --ac-accent: #8dd3ff;
+      --ac-pass: #7ee787;
+      --ac-fail: #ff9b9b;
+      --ac-warn: #f6c46b;
+      --ac-info: #9ecbff;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      color: var(--ac-text);
+      background:
+        radial-gradient(circle at top left, rgba(34, 211, 238, 0.16), transparent 28%),
+        radial-gradient(circle at top right, rgba(56, 189, 248, 0.12), transparent 24%),
+        linear-gradient(180deg, #0a1120 0%, #101827 55%, #0a1324 100%);
+      font: 14px/1.6 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    }
     .ac-wrap {
-      max-width: 1200px;
-      margin: 16px auto;
-      padding: 0 12px;
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 20px 14px 40px;
     }
     .ac-card {
-      border: 1px solid #d9d9d9;
-      border-radius: 10px;
-      padding: 14px;
-      margin-bottom: 14px;
-      background: #fff;
+      border: 1px solid var(--ac-border);
+      border-radius: 14px;
+      padding: 16px;
+      margin-bottom: 16px;
+      background: linear-gradient(180deg, rgba(20, 31, 56, 0.96), rgba(10, 18, 32, 0.96));
+      box-shadow: 0 14px 34px rgba(0, 0, 0, 0.22);
     }
     .ac-toolbar {
       display: flex;
-      gap: 8px;
+      gap: 10px;
       flex-wrap: wrap;
       align-items: center;
     }
     .ac-toolbar button {
-      padding: 7px 12px;
-      border: 1px solid #999;
-      border-radius: 8px;
-      background: #f8f8f8;
+      padding: 8px 14px;
+      border: 1px solid rgba(141, 211, 255, 0.35);
+      border-radius: 999px;
+      color: var(--ac-text);
+      background: linear-gradient(180deg, rgba(38, 63, 92, 0.95), rgba(18, 36, 60, 0.95));
       cursor: pointer;
+    }
+    .ac-toolbar button:hover {
+      border-color: rgba(141, 211, 255, 0.62);
+      background: linear-gradient(180deg, rgba(45, 76, 110, 0.98), rgba(24, 43, 71, 0.98));
     }
     .ac-toolbar button:disabled {
       opacity: 0.6;
@@ -40,7 +70,12 @@
     .ac-grid {
       display: grid;
       grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: 14px;
+      gap: 16px;
+    }
+    .ac-grid-wide {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(420px, 1fr));
+      gap: 16px;
     }
     .ac-table-wrap {
       overflow: auto;
@@ -52,19 +87,24 @@
     }
     .ac-table th,
     .ac-table td {
-      border-bottom: 1px solid #e5e5e5;
+      border-bottom: 1px solid var(--ac-border-soft);
       padding: 6px 8px;
       text-align: left;
       white-space: nowrap;
     }
-    .ac-pass { color: #0a7b2e; font-weight: 700; }
-    .ac-fail { color: #a30000; font-weight: 700; }
-    .ac-warn { color: #9c5f00; font-weight: 700; }
-    .ac-muted { color: #777; }
-    .ac-log {
-      background: #0f172a;
+    .ac-table th {
+      color: var(--ac-accent);
+    }
+    .ac-pass { color: var(--ac-pass); font-weight: 700; }
+    .ac-fail { color: var(--ac-fail); font-weight: 700; }
+    .ac-warn { color: var(--ac-warn); font-weight: 700; }
+    .ac-muted { color: var(--ac-muted); }
+    .ac-log,
+    .ac-pre {
+      background: rgba(8, 14, 28, 0.96);
       color: #dbeafe;
-      border-radius: 8px;
+      border: 1px solid var(--ac-border-soft);
+      border-radius: 10px;
       padding: 10px;
       font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
       font-size: 12px;
@@ -77,8 +117,9 @@
       font-weight: 700;
       padding: 2px 8px;
       border-radius: 999px;
-      border: 1px solid #d0d0d0;
-      background: #f6f6f6;
+      border: 1px solid rgba(148, 163, 184, 0.35);
+      background: rgba(15, 23, 42, 0.9);
+      color: var(--ac-text);
     }
     .ac-kv {
       display: flex;
@@ -89,13 +130,58 @@
     }
     .ac-kv input,
     .ac-kv select {
-      border: 1px solid #c7c7c7;
-      border-radius: 6px;
-      padding: 3px 6px;
+      border: 1px solid rgba(148, 163, 184, 0.35);
+      border-radius: 8px;
+      padding: 4px 8px;
       font-size: 12px;
       width: 86px;
+      color: var(--ac-text);
+      background: rgba(15, 23, 42, 0.95);
     }
-    @media (max-width: 900px) {
+    .ac-section-title {
+      color: var(--ac-accent);
+      font-size: 15px;
+      margin: 24px 0 12px;
+      border-bottom: 1px solid var(--ac-border-soft);
+      padding-bottom: 6px;
+    }
+    .ac-mini-card {
+      background: var(--ac-card-soft);
+      border: 1px solid var(--ac-border-soft);
+      border-radius: 10px;
+      padding: 14px;
+    }
+    .ac-mini-card.ac-pass-card { border-color: rgba(126, 231, 135, 0.38); }
+    .ac-mini-card.ac-fail-card { border-color: rgba(255, 155, 155, 0.38); }
+    .ac-mini-card.ac-warn-card { border-color: rgba(246, 196, 107, 0.38); }
+    .ac-data-row {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      align-items: baseline;
+      margin-bottom: 6px;
+    }
+    .ac-label { color: var(--ac-info); }
+    .ac-value { color: var(--ac-text); word-break: break-all; }
+    .ac-badge {
+      display: inline-block;
+      padding: 1px 8px;
+      border-radius: 999px;
+      font-size: 11px;
+      font-weight: 700;
+    }
+    .ac-badge.ac-pass-badge { background: rgba(27, 94, 32, 0.55); color: var(--ac-pass); }
+    .ac-badge.ac-fail-badge { background: rgba(183, 28, 28, 0.45); color: var(--ac-fail); }
+    .ac-badge.ac-warn-badge { background: rgba(230, 81, 0, 0.35); color: var(--ac-warn); }
+    .ac-badge.ac-info-badge { background: rgba(13, 71, 161, 0.35); color: var(--ac-info); }
+    .ac-diff-match { color: var(--ac-pass); }
+    .ac-diff-miss { color: var(--ac-fail); background: rgba(255, 155, 155, 0.12); }
+    .ac-sample-row {
+      font-size: 10px;
+      color: #b0bec5;
+      line-height: 1.45;
+    }
+    @media (max-width: 980px) {
       .ac-grid { grid-template-columns: 1fr; }
     }
   </style>
@@ -104,13 +190,15 @@
 <body>
   <div class="ac-wrap">
     <div class="ac-card">
-      <h2 style="margin:0 0 8px;">AudioContext Test</h2>
+      <h2 style="margin:0 0 8px; color: var(--ac-accent);">AudioContext Test</h2>
       <div class="ac-muted" style="margin-bottom: 8px;">
         Combined test page for OfflineAudioContext sample-rate accuracy and probe-style analyser behavior.
       </div>
       <div class="ac-toolbar">
         <button id="runAllBtn">Run All Tests</button>
+        <button id="runDeepBtn">Run Deep Inspection</button>
         <span id="allStatus" class="ac-status">Idle</span>
+        <span id="deepStatus" class="ac-status">Idle</span>
       </div>
     </div>
 
@@ -190,6 +278,14 @@
     <section class="ac-card">
       <h3 style="margin-top:0;">Raw Log</h3>
       <div id="log" class="ac-log"></div>
+    </section>
+
+    <section class="ac-card">
+      <h3 style="margin-top:0; color: var(--ac-accent);">Deep Inspection</h3>
+      <div class="ac-muted" style="margin-bottom: 8px;">
+        Full `getOfflineAudioContext()` style analysis: lie detection, noise trap, known-pattern matching, raw sample snapshots, and AudioNode property fingerprint values.
+      </div>
+      <div id="deepRoot"></div>
     </section>
   </div>
 

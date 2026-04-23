@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Local VNC/RDP HTTP+WS Probe</title>
+  <style>
+    :root {
+      --bg: #08131d;
+      --bg2: #0d1f2e;
+      --panel: #12283a;
+      --panel-2: #17344b;
+      --line: #2b4d66;
+      --text: #e8f4ff;
+      --muted: #9fc1da;
+      --ok: #31d49b;
+      --warn: #ffbe55;
+      --bad: #ff6b6b;
+      --info: #66b3ff;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: radial-gradient(1200px 500px at 10% -10%, #174567 0%, transparent 60%),
+                  radial-gradient(1000px 400px at 110% 110%, #153a57 0%, transparent 50%),
+                  linear-gradient(180deg, var(--bg) 0%, var(--bg2) 100%);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang SC", sans-serif;
+      padding: 24px;
+      line-height: 1.5;
+    }
+
+    .wrap {
+      max-width: 1100px;
+      margin: 0 auto;
+    }
+
+    h1 {
+      margin: 0 0 8px;
+      font-size: 30px;
+      letter-spacing: 0.02em;
+    }
+
+    .subtitle {
+      margin: 0 0 18px;
+      color: var(--muted);
+      max-width: 900px;
+    }
+
+    .warning {
+      border: 1px solid #6b4e1f;
+      background: rgba(255, 190, 85, 0.08);
+      color: #ffd98c;
+      border-radius: 10px;
+      padding: 12px 14px;
+      margin-bottom: 16px;
+      font-size: 14px;
+    }
+
+    .toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-bottom: 18px;
+      align-items: center;
+    }
+
+    .field {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 8px 10px;
+      color: var(--muted);
+    }
+
+    input {
+      width: 220px;
+      background: transparent;
+      border: none;
+      color: var(--text);
+      outline: none;
+      font-size: 14px;
+    }
+
+    button {
+      border: none;
+      border-radius: 999px;
+      padding: 9px 16px;
+      cursor: pointer;
+      font-weight: 700;
+      color: #052035;
+      background: linear-gradient(90deg, #73dbff 0%, #31d49b 100%);
+    }
+
+    button.secondary {
+      background: transparent;
+      color: var(--muted);
+      border: 1px solid var(--line);
+    }
+
+    .summary {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 10px;
+      margin-bottom: 14px;
+    }
+
+    .stat {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 12px;
+    }
+
+    .k {
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .v {
+      margin-top: 5px;
+      font-size: 20px;
+      font-weight: 700;
+    }
+
+    .ok { color: var(--ok); }
+    .warn { color: var(--warn); }
+    .bad { color: var(--bad); }
+    .info { color: var(--info); }
+
+    .table-wrap {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      overflow: hidden;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 14px;
+    }
+
+    thead th {
+      text-align: left;
+      padding: 12px 14px;
+      color: var(--muted);
+      background: rgba(255, 255, 255, 0.02);
+      border-bottom: 1px solid var(--line);
+      font-size: 12px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    tbody td {
+      padding: 11px 14px;
+      border-bottom: 1px solid rgba(43, 77, 102, 0.45);
+      vertical-align: top;
+    }
+
+    tbody tr:last-child td { border-bottom: none; }
+
+    code {
+      color: #9ed0ff;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      word-break: break-all;
+    }
+
+    .note {
+      color: var(--muted);
+      font-size: 13px;
+      margin-top: 12px;
+    }
+
+    .single-port {
+      margin-top: 18px;
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 14px;
+    }
+
+    .single-port h2 {
+      margin: 0 0 10px;
+      font-size: 16px;
+      color: var(--text);
+    }
+
+    .single-result {
+      margin-top: 10px;
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 10px 12px;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .pill {
+      display: inline-block;
+      border-radius: 999px;
+      padding: 3px 9px;
+      font-size: 12px;
+      border: 1px solid transparent;
+      font-weight: 600;
+    }
+
+    .pill-ok { color: var(--ok); border-color: rgba(49, 212, 155, 0.5); background: rgba(49, 212, 155, 0.12); }
+    .pill-warn { color: var(--warn); border-color: rgba(255, 190, 85, 0.5); background: rgba(255, 190, 85, 0.12); }
+    .pill-bad { color: var(--bad); border-color: rgba(255, 107, 107, 0.5); background: rgba(255, 107, 107, 0.12); }
+    .pill-info { color: var(--info); border-color: rgba(102, 179, 255, 0.5); background: rgba(102, 179, 255, 0.12); }
+
+    @media (max-width: 920px) {
+      .summary { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      input { width: 160px; }
+    }
+
+    @media (max-width: 640px) {
+      body { padding: 14px; }
+      h1 { font-size: 24px; }
+      .summary { grid-template-columns: 1fr; }
+      table { font-size: 13px; }
+      input { width: 120px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>Local VNC/RDP HTTP+WS Probe</h1>
+    <p class="subtitle">
+      This page uses browser HTTP and WebSocket requests to probe local loopback ports and estimate whether remote desktop related services are running.
+    </p>
+
+    <div class="warning">
+      Native VNC (5900, RFB) and native RDP (3389) are not HTTP protocols. Browser HTTP probing can only provide a heuristic signal and may produce false negatives.
+    </div>
+
+    <div class="toolbar">
+      <div class="field">
+        <span>Host</span>
+        <input id="hostInput" type="text" value="127.0.0.1" placeholder="127.0.0.1" />
+      </div>
+      <div class="field">
+        <span>Timeout (ms)</span>
+        <input id="timeoutInput" type="number" min="200" max="8000" value="1600" />
+      </div>
+      <button id="runBtn">Run Probe</button>
+      <button id="localhostBtn" class="secondary">Use localhost</button>
+    </div>
+
+    <section class="summary">
+      <div class="stat"><div class="k">HTTP Reachable</div><div id="sReachable" class="v ok">0</div></div>
+      <div class="stat"><div class="k">Likely Closed</div><div id="sClosed" class="v bad">0</div></div>
+      <div class="stat"><div class="k">Uncertain</div><div id="sUncertain" class="v warn">0</div></div>
+      <div class="stat"><div class="k">Last Run</div><div id="sLastRun" class="v info">-</div></div>
+    </section>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Service</th>
+            <th>HTTP URL</th>
+            <th>WS URL</th>
+            <th>HTTP Result</th>
+            <th>WS Result</th>
+            <th>Duration</th>
+            <th>Details</th>
+          </tr>
+        </thead>
+        <tbody id="resultBody"></tbody>
+      </table>
+    </div>
+
+    <section class="single-port">
+      <h2>Single Port Test</h2>
+      <div class="toolbar" style="margin-bottom: 0;">
+        <div class="field">
+          <span>Port</span>
+          <input id="singlePortInput" type="number" min="1" max="65535" value="5900" />
+        </div>
+        <button id="runSinglePortBtn">Run Single Port</button>
+      </div>
+      <div id="singleResult" class="single-result">No single port test executed yet.</div>
+    </section>
+
+    <p class="note">
+      Suggested interpretation: if a web endpoint like 5800/6080/6901 responds, web VNC gateway is probably active. For 5900/3389, HTTP/WS failures do not prove service is closed because protocol mismatch is expected.
+    </p>
+  </div>
+
+  <script src="vnc-rdp-http-test.js"></script>
+</body>
+</html>
